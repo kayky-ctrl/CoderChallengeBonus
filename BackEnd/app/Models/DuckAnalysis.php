@@ -37,7 +37,7 @@ class DuckAnalysis extends Model
     protected $hidden = [
         'created_at',
         'updated_at',
-        'primordial_duck_id', // Geralmente ocultamos a FK se temos o relacionamento
+        'primordial_duck_id',
         'id' // Opcional, às vezes útil ocultar
     ];
 
