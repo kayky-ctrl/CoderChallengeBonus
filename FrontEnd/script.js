@@ -7,8 +7,7 @@ const { createApp } = Vue;
         // ---------------------------------------------------------------------
         data() {
           return {
-            // !!! MUDE AQUI SE NECESSÁRIO !!!
-            apiBaseUrl: "https://backend-9wh0.onrender.com/api", // Sem barra no final
+            apiBaseUrl: "https://coderchallengebonus-backend.onrender.com/api",
 
             // --- Controle da UI ---
             currentMode: "pesquisa", // 'pesquisa' (M1/M2) ou 'captura' (M3)
