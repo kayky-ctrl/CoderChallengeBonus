@@ -19,8 +19,7 @@ class SuperpowerResource extends JsonResource
             'description' => $this->description,
             'classifications' => $this->classifications,
 
-            // --- CORREÇÃO AQUI ---
-            // Envolva o valor em uma "function () { ... }"
+           
             'pato_designation' => $this->whenLoaded('primordialDuck', function () {
                 return $this->primordialDuck->designation;
             }),
