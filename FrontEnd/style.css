@@ -1,0 +1,348 @@
+:root {
+        --cor-primaria: #42b883;
+        --cor-secundaria: #35495e;
+        --cor-fundo: #f4f4f4;
+        --cor-borda: #ddd;
+        --cor-sombra: rgba(0, 0, 0, 0.1);
+        --cor-perigo: #e74c3c;
+        --cor-sucesso: #2ecc71;
+        --cor-aviso: #f39c12;
+        --cor-info: #3498db;
+        --cor-modo-pesquisa: #3498db;
+        --cor-modo-captura: #e74c3c;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: var(--cor-fundo);
+        color: var(--cor-secundaria);
+        margin: 0;
+        line-height: 1.6;
+      }
+      #app {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      header {
+        background: #fff;
+        padding: 1rem 2rem;
+        border-bottom: 2px solid var(--cor-primaria);
+        margin-bottom: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px var(--cor-sombra);
+      }
+      header h1 {
+        color: var(--cor-secundaria);
+        margin: 0;
+        text-align: center;
+      }
+      .mode-selector {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+        gap: 10px;
+      }
+      .mode-selector button {
+        flex: 1;
+        padding: 15px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .mode-selector button.pesquisa {
+        background: var(--cor-modo-pesquisa);
+        color: white;
+      }
+      .mode-selector button.captura {
+        background: var(--cor-modo-captura);
+        color: white;
+      }
+      .mode-selector button:not(.active) {
+        background: #eee;
+        color: #777;
+        opacity: 0.7;
+      }
+
+      nav {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--cor-fundo);
+      }
+      nav button {
+        background: var(--cor-primaria);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      nav button:hover,
+      nav button.active {
+        background: var(--cor-secundaria);
+      }
+      nav.pesquisa button {
+        background: var(--cor-modo-pesquisa);
+      }
+      nav.captura button {
+        background: var(--cor-modo-captura);
+      }
+      nav button.active {
+        background: var(--cor-secundaria);
+      }
+
+      main {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px var(--cor-sombra);
+      }
+      section {
+        display: none; /* O Vue vai controlar isso */
+      }
+      section.active {
+        display: block;
+      }
+      h2 {
+        border-bottom: 2px solid var(--cor-fundo);
+        padding-bottom: 10px;
+        color: var(--cor-primaria);
+      }
+      h2.captura {
+        color: var(--cor-modo-captura);
+      }
+      h2.pesquisa {
+        color: var(--cor-modo-pesquisa);
+      }
+
+      /* Estilos de Tabela */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5rem;
+      }
+      th,
+      td {
+        border: 1px solid var(--cor-borda);
+        padding: 12px;
+        text-align: left;
+        word-break: break-word;
+      }
+      th {
+        background-color: #f9f9f9;
+      }
+      tr:nth-child(even) {
+        background-color: var(--cor-fundo);
+      }
+
+      /* Estilos de Formulário */
+      .form-container,
+      .form-grid {
+        display: grid;
+        gap: 1.5rem;
+      }
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      .form-group label {
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--cor-borda);
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      .form-group textarea {
+        min-height: 100px;
+        font-family: monospace;
+      }
+      /* Botões */
+      .btn {
+        background: var(--cor-primaria);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+        margin-right: 5px;
+        margin-top: 5px; /* Adicionado para espaçamento vertical */
+      }
+      .btn-perigo {
+        background: var(--cor-perigo);
+      }
+      .btn-aviso {
+        background: var(--cor-aviso);
+      }
+      .btn-secundario {
+        background: #7f8c8d;
+      }
+      .btn:hover {
+        opacity: 0.8;
+      }
+      .btn-submit {
+        grid-column: 1 / -1;
+        padding: 15px;
+        font-size: 1.1rem;
+      }
+      .btn-submit.captura {
+        background: var(--cor-modo-captura);
+      }
+      .btn-submit.pesquisa {
+        background: var(--cor-modo-pesquisa);
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 700px;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+      .modal-content h3 {
+        margin-top: 0;
+      }
+      .modal-content h4 {
+        color: var(--cor-primaria);
+        margin-top: 1.5rem;
+      } /* Aumenta margem superior */
+      .modal-content h4.captura {
+        color: var(--cor-modo-captura);
+      }
+      .modal-content ul {
+        padding-left: 20px;
+      }
+      .modal-content li {
+        margin-bottom: 5px;
+      }
+      .modal-content pre {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+
+      /* Estados */
+      .loading,
+      .error {
+        text-align: center;
+        padding: 2rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+      .error {
+        color: var(--cor-perigo);
+      }
+      .loading {
+        color: var(--cor-primaria);
+      }
+
+      /* Helpers (Badges) */
+      .capitalize {
+        text-transform: capitalize;
+      }
+      .badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+        display: inline-block; /* Garante que o badge não quebre linha */
+      }
+      .badge-desperto {
+        background: var(--cor-perigo);
+      }
+      .badge-em_transe {
+        background: var(--cor-aviso);
+      }
+      .badge-hibernacao_profunda {
+        background: var(--cor-info);
+      }
+
+      .risk-minimo {
+        color: var(--cor-info);
+        font-weight: bold;
+      }
+      .risk-baixo {
+        color: var(--cor-sucesso);
+        font-weight: bold;
+      }
+      .risk-medio {
+        color: var(--cor-aviso);
+        font-weight: bold;
+      }
+      .risk-alto {
+        color: var(--cor-perigo);
+        font-weight: bold;
+      }
+      .risk-critico {
+        color: darkred;
+        font-weight: bold;
+      } /* Adicionado */
+
+      .status-ocioso {
+        color: var(--cor-sucesso);
+        font-weight: bold;
+      }
+      .status-em_missao {
+        color: var(--cor-perigo);
+        font-weight: bold;
+      }
+      .status-retornando {
+        color: var(--cor-aviso);
+        font-weight: bold;
+      } /* Adicionado */
+      .status-danificado {
+        color: orangered;
+        font-weight: bold;
+      } /* Adicionado */
+      .status-planejamento {
+        color: var(--cor-aviso);
+        font-weight: bold;
+      }
+      .status-capturado {
+        color: var(--cor-sucesso);
+        font-weight: bold;
+      }
+      .status-falha {
+        color: var(--cor-perigo);
+        font-weight: bold;
+      }
+      .status-em_andamento {
+        color: var(--cor-info);
+        font-weight: bold;
+      } /* Adicionado para missões */

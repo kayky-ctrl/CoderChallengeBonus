@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSIN - Controle de Patos Primordiais</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/vue@3"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>DSIN - Controle de Patos Primordiais</h1>
+      <div class="mode-selector">
+        <button
+          @click="changeMode('pesquisa')"
+          :class="{ active: currentMode === 'pesquisa', pesquisa: true }"
+        >
+          Modo Pesquisa (Missão 1 & 2)
+        </button>
+        <button
+          @click="changeMode('captura')"
+          :class="{ active: currentMode === 'captura', captura: true }"
+        >
+          Modo Captura (Missão 3)
+        </button>
+      </div>
+      <nav v-if="currentMode === 'pesquisa'" class="pesquisa">
+        <button
+          @click="changeView('pesquisa-logs')"
+          :class="{ active: currentView === 'pesquisa-logs' }"
+        >
+          Logs de Avistamentos
+        </button>
+        <button
+          @click="changeView('pesquisa-ingestion')"
+          :class="{ active: currentView === 'pesquisa-ingestion' }"
+        >
+          Novo Avistamento
+        </button>
+        <button
+          @click="changeView('pesquisa-ducks')"
+          :class="{ active: currentView === 'pesquisa-ducks' }"
+        >
+          Patos Catalogados
+        </button>
+        <button
+          @click="changeView('pesquisa-drones')"
+          :class="{ active: currentView === 'pesquisa-drones' }"
+        >
+          Drones de Pesquisa
+        </button>
+        <button
+          @click="changeView('pesquisa-manufacturers')"
+          :class="{ active: currentView === 'pesquisa-manufacturers' }"
+        >
+          Fabricantes
+        </button>
+      </nav>
+      <nav v-if="currentMode === 'captura'" class="captura">
+        <button
+          @click="changeView('captura-missions')"
+          :class="{ active: currentView === 'captura-missions' }"
+        >
+          Central de Missões
+        </button>
+        <button
+          @click="changeView('captura-drones')"
+          :class="{ active: currentView === 'captura-drones' }"
+        >
+          Drones de Captura
+        </button>
+        <button
+          @click="changeView('captura-arsenal-weakness')"
+          :class="{ active: currentView === 'captura-arsenal-weakness' }"
+        >
+          Arsenal: Fraquezas
+        </button>
+        <button
+          @click="changeView('captura-arsenal-strategy')"
+          :class="{ active: currentView === 'captura-arsenal-strategy' }"
+        >
+          Arsenal: Estratégias
+        </button>
+        <button
+          @click="changeView('captura-arsenal-defense')"
+          :class="{ active: currentView === 'captura-arsenal-defense' }"
+        >
+          Arsenal: Defesas (SGDA)
+        </button>
+      </nav>
+    </header>
+    <main>
+      <div v-if="loading" class="loading">Carregando dados da API...</div>
+      <div v-if="error" class="error">{{ error }}</div>
+      <section :class="{ active: currentView === 'pesquisa-logs' }">
+        <h2 class="pesquisa">Logs de Avistamentos Recentes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Drone (Serial)</th>
+              <th>Pato (Designação)</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="logs.length === 0">
+              <td colspan="3">Nenhum log encontrado.</td>
+            </tr>
+            <tr v-for="log in logs" :key="log.log_id">
+              <td>{{ log.drone ? log.drone.serial_number : 'N/A' }}</td>
+              <td>{{ log.pato ? log.pato.designation : 'N/A' }}</td>
+              <td>{{ formatDateTime(log.sighted_at) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'pesquisa-ingestion' }">
+        <h2 class="pesquisa">Registrar Novo Avistamento</h2>
+        <form @submit.prevent="submitNewSighting" class="form-container">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="drone_serial">Drone de Pesquisa (Serial)</label>
+              <select
+                id="drone_serial"
+                v-model="newSightingForm.drone_serial_number"
+                required
+              >
+                <option disabled value="">
+                  Selecione um drone de PESQUISA
+                </option>
+                <option
+                  v-for="drone in surveyDrones"
+                  :key="drone.id"
+                  :value="drone.serial_number"
+                >
+                  {{ drone.brand }} - {{ drone.serial_number }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="duck_designation">Designação do Pato</label>
+              <input
+                type="text"
+                id="duck_designation"
+                v-model="newSightingForm.designation"
+                required
+              />
+            </div>
+          </div>
+          <h3>Medidas</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="height">Altura</label
+              ><input
+                type="number"
+                id="height"
+                v-model.number="newSightingForm.height"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="height_unit">Unidade (Altura)</label
+              ><select
+                id="height_unit"
+                v-model="newSightingForm.height_unit"
+                required
+              >
+                <option value="cm">cm</option>
+                <option value="feet">pés (feet)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="weight">Peso</label
+              ><input
+                type="number"
+                id="weight"
+                v-model.number="newSightingForm.weight"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="weight_unit">Unidade (Peso)</label
+              ><select
+                id="weight_unit"
+                v-model="newSightingForm.weight_unit"
+                required
+              >
+                <option value="g">g</option>
+                <option value="lbs">libras (lbs)</option>
+              </select>
+            </div>
+          </div>
+          <h3>Localização</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="latitude">Latitude</label
+              ><input
+                type="text"
+                id="latitude"
+                v-model="newSightingForm.latitude"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="longitude">Longitude</label
+              ><input
+                type="text"
+                id="longitude"
+                v-model="newSightingForm.longitude"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="gps_precision">Precisão GPS</label
+              ><input
+                type="number"
+                id="gps_precision"
+                v-model.number="newSightingForm.gps_precision"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="gps_precision_unit">Unidade (Precisão)</label
+              ><select
+                id="gps_precision_unit"
+                v-model="newSightingForm.gps_precision_unit"
+                required
+              >
+                <option value="m">m</option>
+                <option value="yards">jardas (yards)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="city">Cidade (Opcional)</label
+              ><input
+                type="text"
+                id="city"
+                v-model="newSightingForm.last_known_city"
+              />
+            </div>
+            <div class="form-group">
+              <label for="country">País (Opcional)</label
+              ><input
+                type="text"
+                id="country"
+                v-model="newSightingForm.last_known_country"
+              />
+            </div>
+            <div class="form-group">
+              <label for="reference_point"
+                >Ponto de Referência (Opcional)</label
+              ><input
+                type="text"
+                id="reference_point"
+                v-model="newSightingForm.reference_point"
+              />
+            </div>
+          </div>
+          <h3>Status e Mutações</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="hibernation_status">Status de Hibernação</label
+              ><select
+                id="hibernation_status"
+                v-model="newSightingForm.hibernation_status"
+                required
+              >
+                <option value="desperto">Desperto</option>
+                <option value="em_transe">Em Transe</option>
+                <option value="hibernacao_profunda">
+                  Hibernação Profunda
+                </option>
+              </select>
+            </div>
+            <div
+              class="form-group"
+              v-if="newSightingForm.hibernation_status !== 'desperto' && newSightingForm.hibernation_status !== ''"
+            >
+              <label for="heart_rate">Batimentos Cardíacos (bpm)</label
+              ><input
+                type="number"
+                id="heart_rate"
+                v-model.number="newSightingForm.heart_rate_bpm"
+              />
+            </div>
+            <div class="form-group">
+              <label for="mutation_count">Contagem de Mutações</label
+              ><input
+                type="number"
+                id="mutation_count"
+                v-model.number="newSightingForm.mutation_count"
+                required
+              />
+            </div>
+          </div>
+          <div v-if="newSightingForm.hibernation_status === 'desperto'">
+            <h3>Superpoder (Pato Desperto)</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="superpower_name">Nome do Superpoder</label
+                ><input
+                  type="text"
+                  id="superpower_name"
+                  v-model="newSightingForm.superpower_name"
+                />
+              </div>
+              <div class="form-group">
+                <label for="superpower_desc">Descrição</label
+                ><textarea
+                  id="superpower_desc"
+                  v-model="newSightingForm.superpower_description"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="superpower_class"
+                  >Classificações (separadas por vírgula)</label
+                ><input
+                  type="text"
+                  id="superpower_class"
+                  v-model="newSightingForm.superpower_classifications"
+                />
+              </div>
+            </div>
+          </div>
+          <button type="button" type="submit" class="btn btn-submit pesquisa">
+            Registrar Avistamento
+          </button>
+        </form>
+      </section>
+      <section :class="{ active: currentView === 'pesquisa-ducks' }">
+        <h2 class="pesquisa">Patos Primordiais Catalogados</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Designação</th>
+              <th>Status</th>
+              <th>Risco (Análise M2)</th>
+              <th>Prioridade (Análise M2)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="ducks.length === 0">
+              <td colspan="5">Nenhum pato encontrado.</td>
+            </tr>
+            <tr v-for="duck in ducks" :key="duck.designation">
+              <td>{{ duck.designation }}</td>
+              <td>
+                <span :class="['badge', 'badge-' + duck.hibernation_status]">
+                  {{ formatStatus(duck.hibernation_status) }}
+                </span>
+              </td>
+              <td
+                :class="['capitalize', duck.analysis ? 'risk-' + duck.analysis.risk_level : '']"
+              >
+                {{ duck.analysis ? formatStatus(duck.analysis.risk_level) :
+                'N/A' }}
+              </td>
+              <td>
+                {{ duck.analysis ? duck.analysis.capture_priority : 'N/A' }}
+              </td>
+              <td>
+                <button
+                  class="btn btn-secundario"
+                  @click="openModal('duckDetails', duck)"
+                >
+                  Detalhes (M1/M2)
+                </button>
+                <button
+                  class="btn"
+                  @click="fetchLogsForDuck(duck.designation)"
+                >
+                  Ver Logs (M1)
+                </button>
+                <button
+                  class="btn captura"
+                  @click="openModal('tacticalPlan', duck)"
+                >
+                  Plano Tático (M3)
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'pesquisa-drones' }">
+        <h2 class="pesquisa">Gerenciar Drones de Pesquisa (Missão 1)</h2>
+        <form @submit.prevent="submitNewSurveyDrone" class="form-grid">
+          <div class="form-group">
+            <label for="sdrone_serial_new">Número de Série</label
+            ><input
+              type="text"
+              id="sdrone_serial_new"
+              v-model="newSurveyDroneForm.serial_number"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="sdrone_brand">Marca</label
+            ><input
+              type="text"
+              id="sdrone_brand"
+              v-model="newSurveyDroneForm.brand"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="sdrone_manufacturer">Fabricante</label
+            ><select
+              id="sdrone_manufacturer"
+              v-model="newSurveyDroneForm.manufacturer_id"
+              required
+            >
+              <option value="" disabled>Selecione um fabricante</option>
+              <option v-for="m in manufacturers" :key="m.id" :value="m.id">
+                {{ m.name }}
+              </option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit pesquisa"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Drone de Pesquisa
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Serial</th>
+              <th>Marca</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="surveyDrones.length === 0">
+              <td colspan="3">Nenhum drone de pesquisa encontrado.</td>
+            </tr>
+            <tr v-for="drone in surveyDrones" :key="drone.id">
+              <td>{{ drone.serial_number }}</td>
+              <td>{{ drone.brand }}</td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editSurveyDrone', drone)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteSurveyDrone(drone.id)"
+                >
+                  Excluir
+                </button>
+                <button
+                  class="btn"
+                  @click="fetchLogsForDrone(drone.serial_number)"
+                >
+                  Ver Logs
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'pesquisa-manufacturers' }">
+        <h2 class="pesquisa">Gerenciar Fabricantes</h2>
+        <form @submit.prevent="submitNewManufacturer" class="form-grid">
+          <div class="form-group">
+            <label for="mf_name">Nome</label
+            ><input
+              type="text"
+              id="mf_name"
+              v-model="newManufacturerForm.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="mf_country">País de Origem</label
+            ><input
+              type="text"
+              id="mf_country"
+              v-model="newManufacturerForm.country_of_origin"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit pesquisa"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Fabricante
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>País</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="manufacturers.length === 0">
+              <td colspan="3">Nenhum fabricante encontrado.</td>
+            </tr>
+            <tr v-for="m in manufacturers" :key="m.id">
+              <td>{{ m.name }}</td>
+              <td>{{ m.country_of_origin }}</td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editManufacturer', m)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteManufacturer(m.id)"
+                >
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'captura-missions' }">
+        <h2 class="captura">Central de Missões de Captura</h2>
+        <form @submit.prevent="submitNewMission" class="form-container">
+          <h3>Lançar Nova Missão</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="mission_drone">Drone de Captura (Ocioso)</label>
+              <select
+                id="mission_drone"
+                v-model="newMissionForm.capture_drone_id"
+                required
+              >
+                <option value="" disabled>Selecione um drone</option>
+                <option
+                  v-for="drone in availableCaptureDrones"
+                  :key="drone.id"
+                  :value="drone.id"
+                >
+                  {{ drone.designation }} (Bat: {{ drone.battery_percent }}%)
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mission_duck">Pato Alvo</label>
+              <select
+                id="mission_duck"
+                v-model="newMissionForm.primordial_duck_id"
+                required
+              >
+                <option value="" disabled>Selecione um pato</option>
+                <option v-for="duck in ducks" :key="duck.id" :value="duck.id">
+                  {{ duck.designation }} (Risco: {{ duck.analysis ?
+                  formatStatus(duck.analysis.risk_level) : '?' }})
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="mission_notes">Notas de Briefing (Opcional)</label>
+            <textarea
+              id="mission_notes"
+              v-model="newMissionForm.briefing_notes"
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-submit captura">
+            Lançar Missão
+          </button>
+        </form>
+        <h3>Missões Ativas e Passadas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Drone</th>
+              <th>Alvo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="missions.length === 0">
+              <td colspan="5">Nenhuma missão encontrada.</td>
+            </tr>
+            <tr v-for="mission in missions" :key="mission.id">
+              <td>{{ mission.id }}</td>
+              <td>
+                <span
+                  :class="['capitalize', 'status-' + mission.status.replace(' ', '_')]"
+                  >{{ formatStatus(mission.status) }}</span
+                >
+              </td>
+              <td>
+                {{ mission.assigned_drone ? mission.assigned_drone.designation
+                : 'N/A' }}
+              </td>
+              <td>
+                {{ mission.target_duck ? mission.target_duck.designation :
+                'N/A' }}
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-secundario"
+                  @click="openModal('missionDetails', mission.id)"
+                >
+                  Ver Detalhes
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'captura-drones' }">
+        <h2 class="captura">Gerenciar Drones de Captura (Missão 3)</h2>
+        <form @submit.prevent="submitNewCaptureDrone" class="form-grid">
+          <div class="form-group">
+            <label for="cdrone_designation">Designação</label
+            ><input
+              type="text"
+              id="cdrone_designation"
+              v-model="newCaptureDroneForm.designation"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit captura"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Drone de Captura
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Designação</th>
+              <th>Status</th>
+              <th>Bateria</th>
+              <th>Combustível</th>
+              <th>Integridade</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="captureDrones.length === 0">
+              <td colspan="6">Nenhum drone de captura encontrado.</td>
+            </tr>
+            <tr v-for="drone in captureDrones" :key="drone.id">
+              <td>{{ drone.designation }}</td>
+              <td>
+                <span
+                  :class="['capitalize', 'status-' + drone.status.replace(' ', '_')]"
+                  >{{ formatStatus(drone.status) }}</span
+                >
+              </td>
+              <td>{{ drone.battery_percent }}%</td>
+              <td>{{ drone.fuel_percent }}%</td>
+              <td>{{ drone.integrity_percent }}%</td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editCaptureDrone', drone)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteCaptureDrone(drone.id)"
+                >
+                  Excluir
+                </button>
+                <button class="btn" @click="openModal('telemetry', drone)">
+                  Enviar Telemetria
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section
+        :class="{ active: currentView === 'captura-arsenal-weakness' }"
+      >
+        <h2 class="captura">Arsenal: Fraquezas Conhecidas</h2>
+        <form @submit.prevent="submitNewWeakness" class="form-grid">
+          <div class="form-group">
+            <label for="weakness_name">Nome</label
+            ><input
+              type="text"
+              id="weakness_name"
+              v-model="newWeaknessForm.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="weakness_desc">Descrição</label
+            ><textarea
+              id="weakness_desc"
+              v-model="newWeaknessForm.description"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit captura"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Fraqueza
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="weaknesses.length === 0">
+              <td colspan="3">Nenhuma fraqueza cadastrada.</td>
+            </tr>
+            <tr v-for="item in weaknesses" :key="item.id">
+              <td>{{ item.name }}</td>
+              <td>{{ item.description }}</td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editWeakness', item)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteWeakness(item.id)"
+                >
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section
+        :class="{ active: currentView === 'captura-arsenal-strategy' }"
+      >
+        <h2 class="captura">Arsenal: Estratégias de Ataque</h2>
+        <form @submit.prevent="submitNewStrategy" class="form-grid">
+          <div class="form-group">
+            <label for="strategy_name">Nome</label
+            ><input
+              type="text"
+              id="strategy_name"
+              v-model="newStrategyForm.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="strategy_desc">Descrição</label
+            ><textarea
+              id="strategy_desc"
+              v-model="newStrategyForm.description"
+            ></textarea>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1">
+            <label for="strategy_logic">Lógica de Gatilho (JSON)</label>
+            <textarea
+              id="strategy_logic"
+              v-model="newStrategyForm.trigger_logic"
+            ></textarea>
+            <small
+              >Ex: {"field": "height_cm", "operator": ">", "value":
+              100}</small
+            >
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit captura"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Estratégia
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Lógica</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="strategies.length === 0">
+              <td colspan="4">Nenhuma estratégia cadastrada.</td>
+            </tr>
+            <tr v-for="item in strategies" :key="item.id">
+              <td>{{ item.name }}</td>
+              <td>{{ item.description }}</td>
+              <td>
+                <pre>
+{ item.trigger_logic ? JSON.stringify(item.trigger_logic, null, 2) : 'Nenhuma' }}</pre
+                >
+              </td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editStrategy', item)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteStrategy(item.id)"
+                >
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section :class="{ active: currentView === 'captura-arsenal-defense' }">
+        <h2 class="captura">Arsenal: Sistemas de Defesa (SGDA)</h2>
+        <form @submit.prevent="submitNewDefense" class="form-grid">
+          <div class="form-group">
+            <label for="defense_name">Nome</label
+            ><input
+              type="text"
+              id="defense_name"
+              v-model="newDefenseForm.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="defense_cost">Custo de Recurso</label
+            ><input
+              type="number"
+              id="defense_cost"
+              v-model.number="newDefenseForm.resource_cost"
+            />
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1">
+            <label for="defense_desc">Descrição</label
+            ><textarea
+              id="defense_desc"
+              v-model="newDefenseForm.description"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="btn btn-submit captura"
+            style="grid-column: 1 / -1"
+          >
+            Adicionar Defesa
+          </button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Custo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="defenses.length === 0">
+              <td colspan="4">Nenhum sistema de defesa cadastrado.</td>
+            </tr>
+            <tr v-for="item in defenses" :key="item.id">
+              <td>{{ item.name }}</td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.resource_cost }}</td>
+              <td>
+                <button
+                  class="btn btn-aviso"
+                  @click="openModal('editDefense', item)"
+                >
+                  Editar
+                </button>
+                <button
+                  class="btn btn-perigo"
+                  @click="deleteDefense(item.id)"
+                >
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+    <!-- Modal: Detalhes do Pato (M1/M2) -->
+    <div
+      v-if="modal.type === 'duckDetails'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <!-- Adicione um estado de carregamento DENTRO do modal -->
+        <div v-if="loading" class="loading">Carregando detalhes...</div>
+        <!-- SÓ RENDERIZE O CONTEÚDO SE NÃO ESTIVER CARREGANDO E 'modal.data' EXISTIR -->
+        <div v-else-if="!loading && modal.data">
+          <h3>Detalhes de: {{ modal.data.designation }}</h3>
+          <h4>Dados Coletados (Missão 1)</h4>
+          <ul>
+            <!-- Adicione verificações opcionais (?) para evitar erros se a API retornar algo inesperado -->
+            <li>
+              <strong>Local:</strong> {{ modal.data.last_known_location?.city
+              || 'N/A' }}, {{ modal.data.last_known_location?.country || 'N/A'
+              }}
+            </li>
+            <li>
+              <strong>Coordenadas:</strong> {{
+              modal.data.last_known_location?.latitude }}, {{
+              modal.data.last_known_location?.longitude }}
+            </li>
+            <li>
+              <strong>Altura:</strong> {{
+              parseFloat(modal.data.height_cm).toFixed(2) }} cm
+            </li>
+            <li>
+              <strong>Peso:</strong> {{
+              parseFloat(modal.data.weight_g).toFixed(2) }} g
+            </li>
+            <li>
+              <strong>Mutações:</strong> {{ modal.data.mutation_count }}
+            </li>
+          </ul>
+          <div v-if="modal.data.superpower">
+            <h4>Superpoder: {{ modal.data.superpower.name }}</h4>
+            <p>
+              <strong>Descrição:</strong> {{ modal.data.superpower.description
+              }}
+            </p>
+            <p>
+              <strong>Classificação:</strong> {{
+              modal.data.superpower.classifications?.join(', ') }}
+            </p>
+          </div>
+          <div v-if="modal.data.analysis">
+            <h4 style="color: var(--cor-primaria)">
+              Análise Estratégica (Missão 2)
+            </h4>
+            <ul>
+              <li>
+                <strong>Nível de Risco:</strong>
+                <span
+                  :class="['capitalize', 'risk-' + modal.data.analysis.risk_level]"
+                  >{{ formatStatus(modal.data.analysis.risk_level) }}</span
+                >
+              </li>
+              <li>
+                <strong>Prioridade de Captura:</strong> {{
+                modal.data.analysis.capture_priority }}
+              </li>
+              <li>
+                <strong>Valor Científico:</strong> {{
+                modal.data.analysis.scientific_value }}
+              </li>
+              <li>
+                <strong>Custo Operacional (Est.):</strong> {{
+                modal.data.analysis.operational_cost }}
+              </li>
+              <li>
+                <strong>Poder Militar (Est.):</strong>
+                <span class="capitalize"
+                  >{{ formatStatus(modal.data.analysis.military_power_needed)
+                  }}</span
+                >
+              </li>
+              <li>
+                <strong>Notas da Análise:</strong> {{
+                modal.data.analysis.analysis_notes }}
+              </li>
+            </ul>
+          </div>
+          <div v-else>
+            <h4 style="color: var(--cor-aviso)">
+              Análise Estratégica Pendente
+            </h4>
+          </div>
+        </div>
+        <!-- Adicione um estado de erro se 'modal.data' não carregar -->
+        <div v-else-if="!loading && !modal.data" class="error">
+          Não foi possível carregar os detalhes do pato. Verifique o console
+          ou a resposta da API.
+        </div>
+        <!-- O botão Fechar fica fora do v-else-if para sempre aparecer -->
+        <button
+          type="button"
+          class="btn btn-secundario"
+          @click="closeModal"
+          style="margin-top: 1.5rem"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'filteredLogs'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>{{ modal.data.title }}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Data</th>
+              <th>Dados Brutos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in modal.data.logs" :key="log.id">
+              <td>{{ log.id }}</td>
+              <td>{{ formatDateTime(log.sighted_at) }}</td>
+              <td>
+                <pre>{{ JSON.stringify(log.raw_data_payload, null, 2) }}</pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-secundario" @click="closeModal">
+          Fechar
+        </button>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editManufacturer'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Fabricante</h3>
+        <form @submit.prevent="submitEditManufacturer" class="form-container">
+          <div class="form-group">
+            <label for="mf_edit_name">Nome</label
+            ><input
+              type="text"
+              id="mf_edit_name"
+              v-model="editFormData.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="mf_edit_country">País de Origem</label
+            ><input
+              type="text"
+              id="mf_edit_country"
+              v-model="editFormData.country_of_origin"
+              required
+            />
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editSurveyDrone'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Drone de Pesquisa</h3>
+        <form @submit.prevent="submitEditSurveyDrone" class="form-container">
+          <div class="form-group">
+            <label for="sdrone_edit_serial">Número de Série</label
+            ><input
+              type="text"
+              id="sdrone_edit_serial"
+              v-model="editFormData.serial_number"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="sdrone_edit_brand">Marca</label
+            ><input
+              type="text"
+              id="sdrone_edit_brand"
+              v-model="editFormData.brand"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="sdrone_edit_manufacturer">Fabricante</label
+            ><select
+              id="sdrone_edit_manufacturer"
+              v-model="editFormData.manufacturer_id"
+              required
+            >
+              <option v-for="m in manufacturers" :key="m.id" :value="m.id">
+                {{ m.name }}
+              </option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'missionDetails'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <div v-if="loading">Carregando detalhes...</div>
+        <div v-else-if="modal.data">
+          <h3>Detalhes da Missão #{{ modal.data.id }}</h3>
+          <p>
+            <strong>Status:</strong>
+            <span
+              :class="['capitalize', 'status-' + modal.data.status.replace(' ', '_')]"
+              >{{ formatStatus(modal.data.status) }}</span
+            >
+          </p>
+          <h4 class="captura">
+            Alvo: {{ modal.data.target_duck.designation }}
+          </h4>
+          <div v-if="modal.data.target_duck.analysis">
+            <ul>
+              <li>
+                <strong>Risco:</strong>
+                <span
+                  :class="['capitalize', 'risk-' + modal.data.target_duck.analysis.risk_level]"
+                  >{{ formatStatus(modal.data.target_duck.analysis.risk_level)
+                  }}</span
+                >
+              </li>
+              <li>
+                <strong>Valor Científico:</strong> {{
+                modal.data.target_duck.analysis.scientific_value }}
+              </li>
+            </ul>
+          </div>
+          <div v-if="modal.data.target_duck.superpower">
+            <strong>Superpoder:</strong> {{
+            modal.data.target_duck.superpower.name }}
+          </div>
+          <h4 class="captura">
+            Drone: {{ modal.data.assigned_drone.designation }}
+          </h4>
+          <ul>
+            <li>
+              <strong>Status:</strong>
+              <span
+                :class="['capitalize', 'status-' + modal.data.assigned_drone.status.replace(' ', '_')]"
+                >{{ formatStatus(modal.data.assigned_drone.status) }}</span
+              >
+            </li>
+            <li>
+              <strong>Bateria:</strong> {{
+              modal.data.assigned_drone.battery_percent }}%
+            </li>
+            <li>
+              <strong>Combustível:</strong> {{
+              modal.data.assigned_drone.fuel_percent }}%
+            </li>
+            <li>
+              <strong>Integridade:</strong> {{
+              modal.data.assigned_drone.integrity_percent }}%
+            </li>
+          </ul>
+          <h4 class="captura">Briefing</h4>
+          <p>{{ modal.data.briefing_notes || "Nenhuma nota." }}</p>
+          <hr style="margin: 1.5rem 0" />
+          <button
+            type="button"
+            class="btn captura"
+            @click="openModal('tacticalPlan', modal.data.target_duck)"
+          >
+            Ver Plano Tático
+          </button>
+          <button
+            type="button"
+            class="btn captura"
+            @click="activateDefense(modal.data.id)"
+          >
+            Ativar Defesa (SGDA)
+          </button>
+          <button
+            type="button"
+            class="btn"
+            @click="openModal('telemetry', modal.data.assigned_drone)"
+          >
+            Atualizar Telemetria
+          </button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'tacticalPlan'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <div v-if="loading">Calculando plano...</div>
+        <div v-else-if="modal.data && modal.data.plan">
+          <h3>Plano Tático para: {{ modal.data.duckDesignation }}</h3>
+          <h4 class="captura">Fraquezas Conhecidas</h4>
+          <template
+            v-if="Array.isArray(modal.data.plan.known_weaknesses) && modal.data.plan.known_weaknesses.length > 0"
+          >
+            <ul>
+              <li v-for="w in modal.data.plan.known_weaknesses" :key="w.name">
+                <strong>{{ w.name }}:</strong> {{ w.description }}
+              </li>
+            </ul>
+          </template>
+          <p v-else>Nenhuma fraqueza específica conhecida.</p>
+          <h4 class="captura">Estratégias Recomendadas</h4>
+          <template
+            v-if="Array.isArray(modal.data.plan.recommended_strategies) && modal.data.plan.recommended_strategies.length > 0"
+          >
+            <ul>
+              <li
+                v-for="s in modal.data.plan.recommended_strategies"
+                :key="s.id"
+              >
+                <strong>{{ s.name }}:</strong> {{ s.description }}
+              </li>
+            </ul>
+          </template>
+          <p v-else>
+            Nenhuma estratégia automática recomendada. Proceder com cautela.
+          </p>
+        </div>
+        <div
+          v-else-if="!loading && (!modal.data || !modal.data.plan)"
+          class="error"
+        >
+          Não foi possível carregar o plano tático. Verifique a resposta da
+          API.
+        </div>
+        <button
+          type="button"
+          class="btn btn-secundario"
+          @click="closeModal"
+          style="margin-top: 1.5rem"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'defenseResponse'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3 class="captura">SGDA: Resposta Tática</h3>
+        <div v-if="modal.data.action === 'activate'">
+          <h4>Ativando Contramedida!</h4>
+          <p><strong>Defesa:</strong> {{ modal.data.defense.name }}</p>
+          <p>
+            <strong>Descrição:</strong> {{ modal.data.defense.description }}
+          </p>
+          <p>
+            <strong>Custo de Recurso:</strong> {{
+            modal.data.defense.resource_cost }}
+          </p>
+        </div>
+        <div v-else>
+          <h4 style="color: var(--cor-aviso)">
+            Nenhuma Contramedida Encontrada
+          </h4>
+          <p>{{ modal.data.message }}</p>
+        </div>
+        <button type="button" class="btn btn-secundario" @click="closeModal">
+          Entendido
+        </button>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'telemetry'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Enviar Telemetria para: {{ modal.data.designation }}</h3>
+        <form @submit.prevent="submitTelemetry" class="form-container">
+          <div class="form-group">
+            <label for="tel_status">Status</label>
+            <select id="tel_status" v-model="telemetryForm.status">
+              <option value="ocioso">Ocioso</option>
+              <option value="em_missao">Em Missão</option>
+              <option value="retornando">Retornando</option>
+              <option value="danificado">Danificado</option>
+              <option value="destruido">Destruído</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tel_battery">Bateria (%)</label>
+            <input
+              type="number"
+              id="tel_battery"
+              v-model.number="telemetryForm.battery_percent"
+              min="0"
+              max="100"
+              step="0.1"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="tel_fuel">Combustível (%)</label>
+            <input
+              type="number"
+              id="tel_fuel"
+              v-model.number="telemetryForm.fuel_percent"
+              min="0"
+              max="100"
+              step="0.1"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="tel_integrity">Integridade (%)</label>
+            <input
+              type="number"
+              id="tel_integrity"
+              v-model.number="telemetryForm.integrity_percent"
+              min="0"
+              max="100"
+              step="0.1"
+              required
+            />
+          </div>
+          <button type="submit" class="btn captura">Enviar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editCaptureDrone'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Drone de Captura</h3>
+        <form @submit.prevent="submitEditCaptureDrone" class="form-container">
+          <div class="form-group">
+            <label for="cdrone_edit_designation">Designação</label
+            ><input
+              type="text"
+              id="cdrone_edit_designation"
+              v-model="editFormData.designation"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="cdrone_edit_status">Forçar Status</label>
+            <select id="cdrone_edit_status" v-model="editFormData.status">
+              <option value="ocioso">Ocioso</option>
+              <option value="em_missao">Em Missão</option>
+              <option value="retornando">Retornando</option>
+              <option value="danificado">Danificado</option>
+              <option value="destruido">Destruído</option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editWeakness'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Fraqueza</h3>
+        <form @submit.prevent="submitEditWeakness" class="form-container">
+          <div class="form-group">
+            <label for="weak_edit_name">Nome</label
+            ><input
+              type="text"
+              id="weak_edit_name"
+              v-model="editFormData.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="weak_edit_desc">Descrição</label
+            ><textarea
+              id="weak_edit_desc"
+              v-model="editFormData.description"
+            ></textarea>
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editStrategy'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Estratégia</h3>
+        <form @submit.prevent="submitEditStrategy" class="form-container">
+          <div class="form-group">
+            <label for="strat_edit_name">Nome</label
+            ><input
+              type="text"
+              id="strat_edit_name"
+              v-model="editFormData.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="strat_edit_desc">Descrição</label
+            ><textarea
+              id="strat_edit_desc"
+              v-model="editFormData.description"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="strat_edit_logic">Lógica de Gatilho (JSON)</label>
+            <textarea
+              id="strat_edit_logic"
+              v-model="editFormData.trigger_logic"
+            ></textarea>
+            <small
+              >Ex: {"field": "height_cm", "operator": ">", "value":
+              100}</small
+            >
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+    <div
+      v-if="modal.type === 'editDefense'"
+      class="modal-overlay"
+      @click.self="closeModal"
+    >
+      <div class="modal-content">
+        <h3>Editar Sistema de Defesa</h3>
+        <form @submit.prevent="submitEditDefense" class="form-container">
+          <div class="form-group">
+            <label for="def_edit_name">Nome</label
+            ><input
+              type="text"
+              id="def_edit_name"
+              v-model="editFormData.name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="def_edit_cost">Custo de Recurso</label
+            ><input
+              type="number"
+              id="def_edit_cost"
+              v-model.number="editFormData.resource_cost"
+            />
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1">
+            <label for="def_edit_desc">Descrição</label
+            ><textarea
+              id="def_edit_desc"
+              v-model="editFormData.description"
+            ></textarea>
+          </div>
+          <button type="submit" class="btn">Salvar</button>
+          <button
+            type="button"
+            class="btn btn-secundario"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
