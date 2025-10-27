@@ -15,10 +15,7 @@ class CaptureMissionController extends Controller
      */
     public function index()
     {
-        // Carrega os relacionamentos necessários pelo Resource
         $missions = CaptureMission::with(['MissionDrone', 'MissionDuck'])->get(); 
-        
-        // Retorna a coleção formatada pelo Resource (chave "data" por padrão)
         return CaptureMissionResource::collection($missions);
     }
 
@@ -37,18 +34,18 @@ class CaptureMissionController extends Controller
             $drone->update(['status' => 'em_missao']);
         }
 
-        $mission->load(['MissionDrone', 'MissionDuck']); // Use os nomes dos métodos do Model
+        $mission->load(['MissionDrone', 'MissionDuck']); 
 
-// 4. Retorna a missão criada, formatada por um Resource
+
         return (new CaptureMissionResource($mission))
             ->response()
-            ->setStatusCode(201); // 201 Created
+            ->setStatusCode(201); 
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(CaptureMission $mission) // Route Model Binding!
+    public function show(CaptureMission $mission) 
 {
     $mission->load([
         'MissionDrone',
