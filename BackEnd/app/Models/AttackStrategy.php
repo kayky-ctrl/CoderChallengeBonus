@@ -16,6 +16,6 @@ class AttackStrategy extends Model
         'created_at'
     ];
     protected $casts = [
-        'trigger_logic' => 'array', // <--- TEM QUE ESTAR EXATAMENTE ASSIM!
+        'trigger_logic' => 'array',
     ];
 }
