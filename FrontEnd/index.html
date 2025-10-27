@@ -905,14 +905,11 @@
       @click.self="closeModal"
     >
       <div class="modal-content">
-        <!-- Adicione um estado de carregamento DENTRO do modal -->
         <div v-if="loading" class="loading">Carregando detalhes...</div>
-        <!-- SÓ RENDERIZE O CONTEÚDO SE NÃO ESTIVER CARREGANDO E 'modal.data' EXISTIR -->
         <div v-else-if="!loading && modal.data">
           <h3>Detalhes de: {{ modal.data.designation }}</h3>
           <h4>Dados Coletados (Missão 1)</h4>
           <ul>
-            <!-- Adicione verificações opcionais (?) para evitar erros se a API retornar algo inesperado -->
             <li>
               <strong>Local:</strong> {{ modal.data.last_known_location?.city
               || 'N/A' }}, {{ modal.data.last_known_location?.country || 'N/A'
@@ -989,12 +986,10 @@
             </h4>
           </div>
         </div>
-        <!-- Adicione um estado de erro se 'modal.data' não carregar -->
         <div v-else-if="!loading && !modal.data" class="error">
           Não foi possível carregar os detalhes do pato. Verifique o console
           ou a resposta da API.
         </div>
-        <!-- O botão Fechar fica fora do v-else-if para sempre aparecer -->
         <button
           type="button"
           class="btn btn-secundario"

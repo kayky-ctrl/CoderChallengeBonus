@@ -106,8 +106,6 @@ const { createApp } = Vue;
             this.error = null; // Limpa erros ao trocar de aba
           },
 
-          // DENTRO DO <script> ... methods: { ... } NO SEU index.html
-
           async openModal(type, data) {
             // Log Inicial: Qual modal estamos abrindo?
             console.log(
@@ -444,7 +442,7 @@ const { createApp } = Vue;
           },
           async fetchSurveyDrones() {
             const data = await this.apiRequest("/survey-drones");
-            if (data) this.surveyDrones = data.data || []; // <-- AGORA lê de data.data
+            if (data) this.surveyDrones = data.data || [];
           },
           async fetchManufacturers() {
             const data = await this.apiRequest("/manufacturer");
@@ -634,10 +632,6 @@ const { createApp } = Vue;
             );
             if (data) {
               this.openModal("defenseResponse", data);
-            } else {
-              // Se apiRequest retornar null (por causa de 404, por exemplo), mostramos o erro
-              // A API já retorna 404 com a mensagem correta, então o this.error já foi setado
-              // alert(this.error || "Não foi possível ativar a defesa."); // Podemos mostrar um alerta se preferir
             }
           },
           async submitTelemetry() {
