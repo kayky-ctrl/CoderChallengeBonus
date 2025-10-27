@@ -22,7 +22,6 @@ class DroneTelemetryController extends Controller
         // 3. Retorna uma resposta simples de sucesso
         return response()->json(['message' => "Telemetria do Drone {$drone->designation} atualizada."]);
 
-        // Opcional: Retornar o drone atualizado usando CaptureDroneResource
-        // return new CaptureDroneResource($drone);
+
     }
 }

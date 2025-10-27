@@ -26,7 +26,7 @@ class SightingIngestionController extends Controller
         $weight_g = $this->conversionService->toGrams($request->validated('weight'), $request->validated('weight_unit'));
         $precision_m = $this->conversionService->toMeters($request->validated('gps_precision'), $request->validated('gps_precision_unit'));
 
-// 2. Monte o payload de dados do Pato (A CORREÇÃO ESTÁ AQUI)
+
         $duckDataPayload = [
             'height_cm' => $height_cm,
             'weight_g' => $weight_g,
@@ -37,8 +37,7 @@ class SightingIngestionController extends Controller
             'last_known_country' => $request->validated('country_name'),
             'hibernation_status' => $request->validated('hibernation_status'),
 
-            // A lógica é executada IMEDIATAMENTE e o resultado (null ou o valor) é salvo.
-            // NÃO coloque "function()" ao redor disto.
+            
             'heart_rate_bpm' => $request->validated('hibernation_status') === 'desperto'
                 ? null
                 : $request->validated('heart_rate_bpm'),
@@ -46,7 +45,7 @@ class SightingIngestionController extends Controller
             'mutation_count' => $request->validated('mutation_count'),
         ];
 
-// 3. Chame o firstOrCreate (linha 46)
+
         $duck = PrimordialDuck::firstOrCreate(
             ['designation' => $request->validated('designation')], // Chave para procurar
             $duckDataPayload                                     // Dados para usar SE for criar
@@ -56,13 +55,13 @@ class SightingIngestionController extends Controller
         if (!$duck->wasRecentlyCreated) {
             $duck->update($duckDataPayload);
         }
-        // --- FIM DA MUDANÇA ---
+      
 
         // 5. Lógica de Superpoder (como antes)
         if ($duck->hibernation_status === 'desperto') {
             Superpower::updateOrCreate(
                 ['primordial_duck_id' => $duck->id],
-                [ // Dados para atualizar ou criar
+                [ 
                     'name' => $request->validated('superpower_name'),
                     'description' => $request->validated('superpower_description'),
                     'classifications' => $request->validated('superpower_classifications'),
@@ -70,7 +69,7 @@ class SightingIngestionController extends Controller
             );
         }
 
-        // 6. Criar o Log (como antes)
+       
         $drone = SurveyDrone::where('serial_number', $request->validated('drone_serial_number'))->first();
         SightingLog::create([
             'survey_drone_id' => $drone->id,

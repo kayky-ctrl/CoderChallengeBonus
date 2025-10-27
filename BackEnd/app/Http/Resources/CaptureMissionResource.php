@@ -4,9 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-// Importe os outros Resources que você já tem
 use App\Http\Resources\PrimordialDuckResource;
-use App\Http\Resources\CaptureDroneResource; // Crie este se necessário
+use App\Http\Resources\CaptureDroneResource;
 
 class CaptureMissionResource extends JsonResource
 {

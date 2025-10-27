@@ -41,10 +41,7 @@ class SurveyDroneController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     * CORREÇÃO: Variável renomeada de $id para $survey_drone para bater com o Route Model Binding
-     */
+    
     public function show(SurveyDrone $survey_drone)
     {
         return response()->json([
@@ -52,10 +49,7 @@ class SurveyDroneController extends Controller
             'DronePesquisa' => $survey_drone
         ],200);
     }
-    /**
-     * Update the specified resource in storage.
-     * CORREÇÃO: Variável renomeada de $id para $survey_drone
-     */
+
     public function update(Request $request, SurveyDrone $survey_drone)
     {
         try {
@@ -75,10 +69,7 @@ class SurveyDroneController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     * CORREÇÃO: Variável renomeada de $id para $survey_drone
-     */
+
     public function destroy(SurveyDrone $survey_drone)
     {
         $delete = $survey_drone->delete(); // Usa a variável injetada
