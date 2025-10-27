@@ -17,8 +17,6 @@ class SightingLogResource extends JsonResource
         return [
             'log_id' => $this->id,
             'sighted_at' => $this->sighted_at->toIso8601String(),
-
-            // --- MUDANÇA AQUI ---
             // Em vez de IDs, mostramos os objetos aninhados
             'pato' => new PrimordialDuckResource($this->whenLoaded('primordialDuck')),
 
@@ -29,8 +27,7 @@ class SightingLogResource extends JsonResource
             ],
             // --------------------
 
-            // Opcional: mostrar os dados brutos se necessário
-            // 'raw_data' => $this->raw_data_payload,
+
         ];
     }
 }
